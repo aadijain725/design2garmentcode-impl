@@ -1,1 +1,31 @@
+# Model weights (large files)
 *.pth
+
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Virtual environments
+venv/
+.venv/
+env/
+
+# IDE/Editor settings
+.claude/
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Large model directories (download separately)
+lmm_utils/Qwen/Qwen2-VL-2B-Instruct/
+
+# Logs and outputs
+Logs/
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db

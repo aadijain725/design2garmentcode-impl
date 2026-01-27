@@ -9,8 +9,7 @@
     "vl_model": "",
     "text_model": ""
   },
-  "api_keys": ""
-  ,
+  "api_keys": "",
   "base_urls": "",
   "param_model": "lmm_utils/Qwen/qwen2vl_lora_mlp/model.pth"
 }

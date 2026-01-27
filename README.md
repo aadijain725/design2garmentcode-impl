@@ -29,6 +29,19 @@ cd design2garmentcode-impl
 ### 2. Create the Conda environment
 An `environment.yml` file is provided in the project root with all required Conda and PyPI dependencies (Python 3.9.19, Torch 2.4.0 + CUDA 12.1, etc.).
 
+**Option A – Setup script (recommended)**  
+Runs env create, pip upgrade, optional base-model download, and checks.
+
+```bash
+./setup_conda_env.sh
+# Or, if Tsinghua mirrors are unreachable:
+./setup_conda_env.sh --default-channels
+# Skip base model download (do it later):  ./setup_conda_env.sh --skip-model-download
+# Also download LoRA weights from Google Drive:  ./setup_conda_env.sh --download-lora
+```
+
+**Option B – Manual**
+
 ```bash
 conda env create -f environment.yml
 conda activate d2g
