@@ -29,3 +29,6 @@ Logs/
 # OS files
 .DS_Store
 Thumbs.db
+
+# Documentation (large files)
+documents/
