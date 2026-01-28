@@ -1,0 +1,30 @@
+# SMPL-X body measurements
+# Based on mean_all.yaml, adjusted for SMPLX mesh height (169.1 cm)
+# NOTE: Update these values if you have specific SMPL-X body parameters
+body:
+  arm_length: 53.0
+  arm_pose_angle: 45.0
+  armscye_depth: 12.6
+  back_width: 46.8
+  bum_points: 17.9
+  bust: 98.0
+  bust_line: 25.2
+  bust_points: 16.6
+  crotch_hip_diff: 8.7
+  head_l: 25.8
+  height: 169.1
+  hip_back_width: 53.8
+  hip_inclination: 9.7
+  hips: 101.6
+  hips_line: 23.1
+  leg_circ: 59.1
+  neck_w: 18.6
+  shoulder_incl: 21.3
+  shoulder_w: 35.8
+  underbust: 84.7
+  vert_bust_line: 20.8
+  waist: 82.8
+  waist_back_width: 38.4
+  waist_line: 36.2
+  waist_over_bust_line: 39.8
+  wrist: 16.3

@@ -32,7 +32,10 @@ def garmentyaml_folder2json_folder(input_folder='', output_folder='',
         'f_smpl': './assets/bodies/f_smpl_average_A40.yaml',
         'm_smpl': './assets/bodies/m_smpl_average_A40.yaml',
         #t pose
-        'mean_all_tpose': './assets/bodies/mean_all_tpose.yaml'
+        'mean_all_tpose': './assets/bodies/mean_all_tpose.yaml',
+
+        # SMPL-X (custom)
+        'smplx': './assets/bodies/smplx.yaml',
     }
     body_to_use = body_to_use # CHANGE HERE to use different set of body measurements
     # body_to_use = 'mean_all_tpose'

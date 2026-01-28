@@ -17,12 +17,20 @@ from transformers import (
 )
 from lmm_utils.Qwen.qwen2vl_lora_mlp.qwen2vl_modify_modeling_qwen2_vl import Qwen2VLForConditionalGeneration
 import json
+import os
+
+# Get model path from environment variable or use default
+MODEL_BASE_PATH = os.environ.get('MODEL_PATH', './lmm_utils/Qwen')
+QWEN_MODEL_PATH = os.path.join(MODEL_BASE_PATH, 'Qwen2-VL-2B-Instruct')
+
 # Qwen2VLForConditionalGeneration
 class LoRAWithMLP(nn.Module):
     def __init__(self, base_model_name, mlp_hidden_size=512, num_mlp_layers=2,device='cuda:0'):
         super().__init__()
         self.device=device
-        self.base_model = Qwen2VLForConditionalGeneration.from_pretrained("./lmm_utils/Qwen/Qwen2-VL-2B-Instruct/", device_map=device,
+        # Use environment-configurable model path
+        model_path = os.environ.get('QWEN_MODEL_PATH', QWEN_MODEL_PATH)
+        self.base_model = Qwen2VLForConditionalGeneration.from_pretrained(model_path, device_map=device,
                                                                 torch_dtype=torch.bfloat16, trust_remote_code=True, )
         self.base_model.enable_input_require_grads()  # This method is performed when gradient checkpoints are turned on
         config = LoraConfig(

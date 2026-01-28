@@ -4,7 +4,7 @@ from modelscope import AutoTokenizer
 from qwen_vl_utils import process_vision_info
 from transformers import AutoProcessor
 import json
-from lmm_utils.fintuned_qwen2vl_model import LoRAWithMLP
+from lmm_utils.fintuned_qwen2vl_model import LoRAWithMLP, MODEL_BASE_PATH, QWEN_MODEL_PATH
 from lmm_utils.projector import vec_2_pattern_yaml
 from lmm_utils.projector import save_design2yaml
 import yaml
@@ -12,6 +12,7 @@ import os
 import numpy as np
 from lmm_utils.sim_utils import garmentyaml_folder2json_folder
 from pathlib import Path
+
 def load_system_config():
   root_path = Path(__file__).resolve().parent.parent # Navigate to the project's home directory
   config_path = root_path / "system.json"
@@ -21,8 +22,14 @@ def load_system_config():
 
 _config = load_system_config()
 
+# Get default model path from environment or use constant from fintuned_qwen2vl_model
+DEFAULT_MODEL_PATH = os.environ.get('QWEN_MODEL_PATH', QWEN_MODEL_PATH)
+
 class Predictor:
-    def __init__(self, model_path="./lmm_utils/Qwen/Qwen2-VL-2B-Instruct", device=None,model_init=True):
+    def __init__(self, model_path=None, device=None,model_init=True):
+        # Use environment-configurable model path if not explicitly provided
+        if model_path is None:
+            model_path = DEFAULT_MODEL_PATH
         self.model_init = model_init
         if not model_init:
             return
