@@ -1,0 +1,71 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+.venv/
+ENV/
+env/
+.eggs/
+*.egg-info/
+*.egg
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Git
+.git/
+.gitignore
+.gitattributes
+
+# Model files (mounted as volumes, not built into image)
+lmm_utils/Qwen/Qwen2-VL-2B-Instruct/
+lmm_utils/Qwen/qwen2vl_lora_mlp/model.pth
+
+# Logs and temp files
+Logs/
+tmp_gui/
+*.log
+.DS_Store
+
+# Documentation (not needed in container)
+documents/
+docs/
+*.md
+!README.md
+
+# Development and setup files
+*.sh
+!docker/entrypoint.sh
+environment.yml
+setup_*.sh
+push-to-github.sh
+
+# Test files and data
+test_*.py
+assets/test_*
+*.ipynb
+.ipynb_checkpoints/
+
+# Large unnecessary files
+*.pdf
+*.mp4
+*.avi
+*.mov
+*.zip
+*.tar.gz
+
+# Docker files (prevent recursive copying)
+docker/
+Dockerfile*
+
+# Conda/pip caches
+.conda/
+.cache/
+pip-cache/

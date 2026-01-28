@@ -1,0 +1,144 @@
+# ==============================================
+# Design2GarmentCode - GPU Dockerfile
+# For RunPod and production GPU deployment
+# ==============================================
+
+FROM nvidia/cuda:12.1.0-runtime-ubuntu22.04 AS base
+
+# Prevent interactive prompts during apt install
+ENV DEBIAN_FRONTEND=noninteractive
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
+
+# Install Python 3.9 and system dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    # Python
+    python3.9 \
+    python3.9-dev \
+    python3.9-venv \
+    python3-pip \
+    # Cairo for SVG rendering
+    libcairo2-dev \
+    libgirepository1.0-dev \
+    pkg-config \
+    # OpenGL for 3D rendering
+    libgl1-mesa-glx \
+    libglib2.0-0 \
+    libsm6 \
+    libxext6 \
+    libxrender-dev \
+    # Build tools
+    build-essential \
+    gcc \
+    g++ \
+    # Utilities
+    curl \
+    git \
+    && rm -rf /var/lib/apt/lists/* \
+    && apt-get clean
+
+# Set Python 3.9 as default
+RUN update-alternatives --install /usr/bin/python python /usr/bin/python3.9 1 && \
+    update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.9 1 && \
+    update-alternatives --install /usr/bin/pip pip /usr/bin/pip3 1
+
+# Upgrade pip
+RUN pip install --upgrade pip
+
+WORKDIR /app
+
+# ==============================================
+# Stage 2: Install Python dependencies
+# ==============================================
+FROM base AS deps
+
+# Install CUDA-enabled PyTorch (large download, good to cache)
+RUN pip install --no-cache-dir \
+    torch==2.4.0+cu121 \
+    torchvision==0.19.0+cu121 \
+    torchaudio==2.4.0+cu121 \
+    --extra-index-url https://download.pytorch.org/whl/cu121
+
+# Install ML/AI dependencies
+RUN pip install --no-cache-dir \
+    transformers==4.46.2 \
+    tokenizers==0.20.3 \
+    accelerate==1.1.1 \
+    datasets==2.18.0 \
+    huggingface-hub==0.29.2 \
+    safetensors==0.5.3 \
+    tiktoken==0.9.0 \
+    peft==0.13.2 \
+    qwen-vl-utils==0.0.8 \
+    modelscope==1.18.0 \
+    openai==1.54.4
+
+# Install scientific computing
+RUN pip install --no-cache-dir \
+    numpy==1.26.4 \
+    scipy==1.13.1
+
+# Install graphics/visualization
+RUN pip install --no-cache-dir \
+    matplotlib \
+    svgwrite==1.4.3 \
+    svgpathtools \
+    cairosvg==2.7.1
+
+# Install 3D processing
+RUN pip install --no-cache-dir \
+    trimesh \
+    pyrender==0.1.45
+
+# Install GUI and utilities
+RUN pip install --no-cache-dir \
+    nicegui==2.15.0 \
+    pyyaml==6.0.2 \
+    psutil==6.0.0
+
+# Note: cgal and libigl may have issues on some platforms
+# Install with fallback
+RUN pip install --no-cache-dir cgal libigl==2.5.1 || \
+    echo "Warning: cgal/libigl installation failed, 3D features may be limited"
+
+# ==============================================
+# Stage 3: Application
+# ==============================================
+FROM deps AS app
+
+# Copy application code
+COPY pygarment/ ./pygarment/
+COPY lmm_utils/*.py ./lmm_utils/
+COPY lmm_utils/Qwen/*.py ./lmm_utils/Qwen/ 2>/dev/null || true
+COPY lmm_utils/Qwen/qwen2vl_lora_mlp/*.py ./lmm_utils/Qwen/qwen2vl_lora_mlp/ 2>/dev/null || true
+COPY gui/ ./gui/
+COPY assets/ ./assets/
+COPY data_utils/ ./data_utils/ 2>/dev/null || true
+COPY gui.py system.json ./
+
+# Create directories for runtime
+RUN mkdir -p /app/lmm_utils/Qwen/Qwen2-VL-2B-Instruct \
+    /app/lmm_utils/Qwen/qwen2vl_lora_mlp \
+    /app/Logs \
+    /app/tmp_gui
+
+# Copy entrypoint script
+COPY docker/entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+
+# Environment variables
+ENV MODEL_MODE=local
+ENV MODEL_PATH=/app/lmm_utils/Qwen
+ENV HOST=0.0.0.0
+ENV PORT=8080
+ENV NVIDIA_VISIBLE_DEVICES=all
+ENV NVIDIA_DRIVER_CAPABILITIES=compute,utility
+
+# Expose NiceGUI port
+EXPOSE 8080
+
+# Health check (longer start period for model loading)
+HEALTHCHECK --interval=30s --timeout=10s --start-period=180s --retries=3 \
+    CMD curl -f http://localhost:8080/ || exit 1
+
+ENTRYPOINT ["/entrypoint.sh"]

@@ -1,0 +1,109 @@
+# ==============================================
+# Design2GarmentCode Docker Compose
+# ==============================================
+# Usage:
+#   CPU mode:  docker compose --profile cpu up --build
+#   GPU mode:  docker compose --profile gpu up --build
+#   API mode:  docker compose --profile api up --build
+# ==============================================
+
+services:
+  # ==============================================
+  # CPU Service (for development/testing)
+  # ==============================================
+  d2g-cpu:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.cpu
+    image: design2garmentcode:cpu
+    container_name: d2g-cpu
+    profiles:
+      - cpu
+    ports:
+      - "${PORT:-8080}:8080"
+    volumes:
+      # Mount model files from host (download once, reuse)
+      - ../lmm_utils/Qwen/Qwen2-VL-2B-Instruct:/app/lmm_utils/Qwen/Qwen2-VL-2B-Instruct:ro
+      - ../lmm_utils/Qwen/qwen2vl_lora_mlp:/app/lmm_utils/Qwen/qwen2vl_lora_mlp:ro
+      # Logs and temp output (persistent)
+      - d2g-logs:/app/Logs
+      - d2g-tmp:/app/tmp_gui
+    environment:
+      - MODEL_MODE=local
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - HOST=0.0.0.0
+      - PORT=8080
+    restart: unless-stopped
+
+  # ==============================================
+  # GPU Service (for RunPod/production)
+  # Requires: nvidia-docker / NVIDIA Container Toolkit
+  # ==============================================
+  d2g-gpu:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.gpu
+    image: design2garmentcode:gpu
+    container_name: d2g-gpu
+    profiles:
+      - gpu
+    ports:
+      - "${PORT:-8080}:8080"
+    volumes:
+      # Mount model files from host
+      - ../lmm_utils/Qwen/Qwen2-VL-2B-Instruct:/app/lmm_utils/Qwen/Qwen2-VL-2B-Instruct:ro
+      - ../lmm_utils/Qwen/qwen2vl_lora_mlp:/app/lmm_utils/Qwen/qwen2vl_lora_mlp:ro
+      # Logs and temp output
+      - d2g-logs:/app/Logs
+      - d2g-tmp:/app/tmp_gui
+    environment:
+      - MODEL_MODE=local
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - NVIDIA_VISIBLE_DEVICES=all
+      - HOST=0.0.0.0
+      - PORT=8080
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    restart: unless-stopped
+
+  # ==============================================
+  # API Service (lightweight, no local model)
+  # Uses external API for model inference
+  # ==============================================
+  d2g-api:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.cpu
+    image: design2garmentcode:api
+    container_name: d2g-api
+    profiles:
+      - api
+    ports:
+      - "${PORT:-8080}:8080"
+    volumes:
+      # No model mount needed in API mode
+      # Logs and temp output only
+      - d2g-logs:/app/Logs
+      - d2g-tmp:/app/tmp_gui
+    environment:
+      - MODEL_MODE=api
+      - QWEN_API_URL=${QWEN_API_URL:-}
+      - QWEN_API_KEY=${QWEN_API_KEY:-}
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - HOST=0.0.0.0
+      - PORT=8080
+    restart: unless-stopped
+
+# ==============================================
+# Named volumes for persistent data
+# ==============================================
+volumes:
+  d2g-logs:
+    name: d2g-logs
+  d2g-tmp:
+    name: d2g-tmp
