@@ -40,6 +40,8 @@ Runs env create, pip upgrade, optional base-model download, and checks.
 # Also download LoRA weights from Google Drive:  ./setup_conda_env.sh --download-lora
 ```
 
+See **[Setup and running guide](documents/SETUP_AND_RUN.md)** for full `setup_conda_env.sh` options, `run_gui.sh` usage, and troubleshooting.
+
 **Option B – Manual**
 
 ```bash
@@ -70,9 +72,27 @@ Follow the steps **in the given order**:
 - Download the fine-tuned weights file from [Google Drive](https://drive.google.com/file/d/1CL7OLUq6fYcwoDuLRkBxtKNxJ0_G73U-/view?usp=sharing), and place it in `lmm_utils/Qwen/qwen2vl_lora_mlp/`.
 ---
 
+## Custom scripts & setup guide
+
+This repository includes two **custom scripts** (not in the upstream Style3D repo):
+
+| Script | Purpose |
+|--------|---------|
+| **`setup_conda_env.sh`** | One-shot Conda env creation, optional base-model/LoRA downloads, and checks. Use `--default-channels` if Tsinghua mirrors fail, `--download-lora` for LoRA weights, etc. |
+| **`run_gui.sh`** | Run the GUI without manually activating Conda. Supports `--port` and `--host` (default: `0.0.0.0:8080`). Expects `d2g` at a fixed path (see doc). |
+
+**Full documentation:** [**documents/SETUP_AND_RUN.md**](documents/SETUP_AND_RUN.md) — setup steps, all script options, troubleshooting, and quick reference.
+
+---
+
 ## Testing with GUI
 
-Setting up the GUI with `python gui.py` where you will see the following interface (modified from GarmentCode)
+Start the GUI with either:
+
+- **`./run_gui.sh`** — custom script; uses `d2g` automatically, supports `--port` / `--host`. See [Setup and running guide](documents/SETUP_AND_RUN.md).
+- **`python gui.py`** — run after `conda activate d2g`; optional `--host` and `--port`.
+
+You will see the following interface (modified from GarmentCode):
 
 <p align="center">
   <img src="https://github.com/Style3D/design2garmentcode-impl/raw/main/assets/img/gui_example.png">
