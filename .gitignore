@@ -30,5 +30,5 @@ Logs/
 .DS_Store
 Thumbs.db
 
-# Documentation (large files)
-documents/
+# PDFs (large; keep .md and other docs)
+*.pdf
