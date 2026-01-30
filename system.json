@@ -6,10 +6,10 @@
   "bodies_default_path": "./assets/bodies",
   "body_samples_path": "",
   "model": {
-    "vl_model": "",
-    "text_model": ""
+    "vl_model": "gpt-4o-2024-11-20",
+    "text_model": "gpt-4o-2024-11-20"
   },
   "api_keys": "",
-  "base_urls": "",
+  "base_urls": "https://api.openai.com/v1",
   "param_model": "lmm_utils/Qwen/qwen2vl_lora_mlp/model.pth"
 }
