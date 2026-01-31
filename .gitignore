@@ -1,1 +1,39 @@
+# Model weights
 *.pth
+*.safetensors
+*.bin
+
+# Qwen model (downloaded separately)
+lmm_utils/Qwen/Qwen2-VL-2B-Instruct/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+.eggs/
+dist/
+build/
+
+# Temporary files
+tmp_gui/
+Logs/
+*.log
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Test outputs
+outputs/
+
+# Local config (use system.json.template)
+system.json

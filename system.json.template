@@ -1,0 +1,15 @@
+{
+  "output": "./Logs/",
+  "datasets_path": "",
+  "datasets_sim": "",
+  "sim_configs_path": "./assets/Sim_props",
+  "bodies_default_path": "./assets/bodies",
+  "body_samples_path": "",
+  "model": {
+    "vl_model": "gpt-4o",
+    "text_model": "gpt-4o"
+  },
+  "api_keys": "YOUR_OPENAI_API_KEY_HERE",
+  "base_urls": "https://api.openai.com/v1",
+  "param_model": "lmm_utils/Qwen/qwen2vl_lora_mlp/model.pth"
+}

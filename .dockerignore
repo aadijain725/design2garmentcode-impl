@@ -1,0 +1,36 @@
+# Git
+.git
+.gitignore
+
+# Python
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.egg-info
+.eggs
+dist
+build
+
+# Logs and outputs (mount as volumes instead)
+Logs/
+outputs/
+
+# Large model files (download separately)
+lmm_utils/Qwen/Qwen2-VL-2B-Instruct/
+lmm_utils/Qwen/qwen2vl_lora_mlp/model.pth
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Documentation
+*.md
+!README.md

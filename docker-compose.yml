@@ -1,0 +1,27 @@
+version: '3.8'
+
+services:
+  design2garment:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: design2garmentcode:latest
+    container_name: design2garment
+    ports:
+      - "8080:8080"
+    volumes:
+      # Persist models and outputs
+      - ./lmm_utils/Qwen:/app/lmm_utils/Qwen
+      - ./Logs:/app/Logs
+      - ./outputs:/app/outputs
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=all
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    restart: unless-stopped
