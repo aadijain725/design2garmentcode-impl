@@ -12,6 +12,9 @@ echo "============================================"
 source /opt/conda/etc/profile.d/conda.sh
 conda activate d2g
 
+# Set OpenGL platform for headless 3D rendering
+export PYOPENGL_PLATFORM=osmesa
+
 # Check GPU
 if command -v nvidia-smi &> /dev/null; then
     echo "GPU: $(nvidia-smi --query-gpu=name --format=csv,noheader 2>/dev/null || echo 'Not available')"

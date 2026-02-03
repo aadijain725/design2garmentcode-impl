@@ -7,13 +7,18 @@ FROM nvidia/cuda:12.1.1-devel-ubuntu22.04
 ENV DEBIAN_FRONTEND=noninteractive
 ENV TZ=UTC
 
-# Install system dependencies
+# Install system dependencies (including OSMesa and EGL for headless 3D rendering)
 RUN apt-get update && apt-get install -y \
     wget \
     curl \
     git \
     build-essential \
     libgl1-mesa-glx \
+    libgl1-mesa-dev \
+    libegl1-mesa \
+    libegl1-mesa-dev \
+    libosmesa6 \
+    libosmesa6-dev \
     libglib2.0-0 \
     libsm6 \
     libxext6 \
@@ -60,6 +65,14 @@ SHELL ["conda", "run", "-n", "d2g", "/bin/bash", "-c"]
 # Copy the rest of the application
 COPY . /app
 
+# Install NvidiaWarp-GarmentCode for 3D simulation
+ENV CUDA_PATH=/usr/local/cuda
+RUN git clone https://github.com/maria-korosteleva/NvidiaWarp-GarmentCode.git /tmp/warp && \
+    cd /tmp/warp && \
+    python build_lib.py && \
+    pip install -e . && \
+    rm -rf /tmp/warp/.git
+
 # Create directories for models and logs
 RUN mkdir -p /app/lmm_utils/Qwen/Qwen2-VL-2B-Instruct && \
     mkdir -p /app/lmm_utils/Qwen/qwen2vl_lora_mlp && \
@@ -88,8 +101,9 @@ EXPOSE 8080
 # Set environment variables
 ENV PYTHONUNBUFFERED=1
 ENV NVIDIA_VISIBLE_DEVICES=all
-ENV NVIDIA_DRIVER_CAPABILITIES=compute,utility
+ENV NVIDIA_DRIVER_CAPABILITIES=compute,utility,graphics
 ENV HF_HOME=/app/.cache/huggingface
+ENV PYOPENGL_PLATFORM=osmesa
 
 # Entrypoint handles model download check and config
 ENTRYPOINT ["/app/docker-entrypoint.sh"]

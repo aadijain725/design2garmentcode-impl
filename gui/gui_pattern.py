@@ -13,7 +13,7 @@ from assets.garment_programs.meta_garment import MetaGarment
 from assets.bodies.body_params import BodyParameters
 import pygarment as pyg
 from pygarment.meshgen.boxmeshgen import BoxMesh
-# from pygarment.meshgen.simulation import run_sim
+from pygarment.meshgen.simulation import run_sim
 import pygarment.data_config as data_config
 from pygarment.meshgen.sim_config import PathCofig
 

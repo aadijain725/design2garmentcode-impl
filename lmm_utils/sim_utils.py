@@ -9,7 +9,7 @@ from assets.garment_programs.meta_garment import MetaGarment
 from pygarment.data_config import Properties
 from pygarment.meshgen.boxmeshgen import BoxMesh
 from pygarment.meshgen.sim_config import PathCofig
-# from pygarment.meshgen.simulation import run_sim
+from pygarment.meshgen.simulation import run_sim
 
 
 #Convert the yaml file directly into an output plate
