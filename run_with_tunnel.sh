@@ -57,6 +57,7 @@ else
     exit 1
 fi
 conda activate d2g
+export TOKENIZERS_PARALLELISM=false  # Suppress HuggingFace tokenizers warning
 echo -e "${GREEN}  ✓ Environment 'd2g' activated${NC}"
 
 # Kill any existing processes
@@ -95,10 +96,18 @@ fi
 echo -e "${BLUE}[5/5] Starting Cloudflare tunnel...${NC}"
 cloudflared tunnel --url http://localhost:8080 > "$CF_LOG" 2>&1 &
 CF_PID=$!
-sleep 8
+sleep 12  # Allow extra time for tunnel initialization
 
-# Get tunnel URL
-TUNNEL_URL=$(grep -oE "https://[a-zA-Z0-9-]+\.trycloudflare\.com" "$CF_LOG" | tail -1)
+# Get tunnel URL (with retry)
+TUNNEL_URL=""
+for attempt in {1..3}; do
+    TUNNEL_URL=$(grep -oE "https://[a-zA-Z0-9-]+\.trycloudflare\.com" "$CF_LOG" 2>/dev/null | tail -1)
+    if [ -n "$TUNNEL_URL" ]; then
+        break
+    fi
+    echo -e "  Waiting for tunnel URL (attempt $attempt/3)..."
+    sleep 3
+done
 
 if [ -z "$TUNNEL_URL" ]; then
     echo -e "${RED}  ✗ Failed to get tunnel URL. Check logs:${NC}"
