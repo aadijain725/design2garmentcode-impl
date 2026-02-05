@@ -72,43 +72,49 @@ class GUIPattern:
      # Init Agent
         self.agent=None
 
-    def parse_chat(self, text_prompt='', img_url='',api_key=None, base_url=None, model=None,text_model=None):
+    def parse_chat(self, text_prompt='', img_url='', api_key=None, base_url=None,
+                   model=None, text_model=None, img_urls=None):
         print('Prompt: ', text_prompt)
         print('Image: ', img_url)
-        self.agent.mmua=MMUA(api_key=api_key, base_url=base_url, model=model,text_model=text_model)
-        # self.agent=Agent(api_key=api_key, base_url=base_url, model=model,text_model=text_model)
-        text_prompt = text_prompt.strip()
-        modify_mode = 'modify' in text_prompt or 'm:' in text_prompt        
-        stress_mode='stress' in text_prompt or 's:' in text_prompt
+        self.agent.mmua = MMUA(api_key=api_key, base_url=base_url, model=model, text_model=text_model)
 
-        # try:
+        # Normalize img_urls: prefer explicit list, fall back to single img_url
+        if img_urls is None:
+            img_urls = [img_url] if img_url else []
+
+        text_prompt = text_prompt.strip()
+        modify_mode = 'modify' in text_prompt or 'm:' in text_prompt
+        stress_mode = 'stress' in text_prompt or 's:' in text_prompt
+
         # Modify mode
         if modify_mode:
-            assert self.design_params and self.design_list, "Must provide a base design under mofify mode."
-            gpt_response,gpt_design_params,gpt_design_list=self.agent.modify_design(self.design_list,text_prompt=text_prompt,design_params=self.design_params)
-            # Stress mode:
+            assert self.design_params and self.design_list, "Must provide a base design under modify mode."
+            gpt_response, gpt_design_params, gpt_design_list = self.agent.modify_design(
+                self.design_list, text_prompt=text_prompt, design_params=self.design_params)
+        # Stress mode
         elif stress_mode:
-            assert self.design_params and self.design_list, "Must provide a base design under mofify mode."
-            gpt_response,gpt_design_params,gpt_design_list=self.agent.stress_design(self.design_list,img_url=img_url,design_params=self.design_params)
-           # Inference from image and text
-        elif text_prompt and img_url:
-            gpt_response,gpt_design_params,gpt_design_list=self.agent.picture_text_design(img_url,text_prompt)
-
-        # Inference from text only
-        elif text_prompt and not img_url:
-            gpt_response,gpt_design_params,gpt_design_list=self.agent.text_design(text_prompt)
-
-        # Inference from image only
-        elif img_url and not text_prompt:
-            gpt_response,gpt_design_params,gpt_design_list=self.agent.picture_design(img_url)
+            assert self.design_params and self.design_list, "Must provide a base design under modify mode."
+            stress_img = img_urls[0] if img_urls else img_url
+            gpt_response, gpt_design_params, gpt_design_list = self.agent.stress_design(
+                self.design_list, img_url=stress_img, design_params=self.design_params)
+        # Multi-image or image+text → unified pipeline
+        elif len(img_urls) > 1 or (img_urls and text_prompt):
+            gpt_response, gpt_design_params, gpt_design_list = self.agent.design(
+                images=img_urls, text=text_prompt or None).as_legacy_tuple()
+        # Text only
+        elif text_prompt and not img_urls:
+            gpt_response, gpt_design_params, gpt_design_list = self.agent.text_design(text_prompt)
+        # Single image only
+        elif img_urls and not text_prompt:
+            gpt_response, gpt_design_params, gpt_design_list = self.agent.picture_design(img_urls[0])
         else:
             raise ValueError("At least one design description is required, text prompt or image.")
 
         self.design_list = gpt_design_list
-        self.set_new_design(gpt_design_params)                            
-        self.design_params=gpt_design_params
+        self.set_new_design(gpt_design_params)
+        self.design_params = gpt_design_params
         print('*** Design params: ', self.design_list, self.design_params)
-        
+
         return gpt_response
 
     def release(self):

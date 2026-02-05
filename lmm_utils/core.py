@@ -1,4 +1,5 @@
 import json
+import logging
 import os
 import re
 import openai
@@ -9,6 +10,8 @@ from pydantic import BaseModel
 from pathlib import Path
 from .validation import _ALL_TEXT, bool2condition, bool2text_alltext
 import base64
+
+logger = logging.getLogger('design2garmentcode.mmua')
 
 
 origin_messages = [
@@ -1898,6 +1901,68 @@ class MMUA():
             print(f"Parsing error: {e}")
             return []
 
+    def _validate_and_refine_list(self, end_list, messages, model, max_retries=2):
+        """Shared validation+correction loop for design caption lists.
+
+        Checks end_list against the text space and design conditions, asking the
+        LLM to fix issues up to max_retries times.
+
+        Args:
+            end_list: Current design caption list to validate.
+            messages: Conversation messages (mutated in place on retry).
+            model: Model name for API calls.
+            max_retries: Maximum correction iterations.
+
+        Returns:
+            Validated (possibly corrected) end_list.
+        """
+        if bool2text_alltext(end_list)[0] and bool2condition(end_list)[0]:
+            logger.info("Validation passed on first check, list length=%d", len(end_list))
+            return end_list
+
+        for attempt in range(1, max_retries + 1):
+            nolack_flag, lack_text_list = bool2condition(end_list)
+            true_flag, no_in_text_list = bool2text_alltext(end_list)
+
+            if nolack_flag and true_flag:
+                logger.info("Validation passed on attempt %d", attempt)
+                return end_list
+
+            logger.warning(
+                "Validation attempt %d/%d: nolack=%s, true=%s, lacks=%s, invalid=%s",
+                attempt, max_retries, nolack_flag, true_flag,
+                lack_text_list, no_in_text_list)
+
+            lack_content = ''
+            no_in_text_content = ''
+            temp_list_content = (
+                f'{end_list}is all the text that was previously selected, and the words that have been selected before are not in the text space,'
+                f'All of them should continue to be returned to the user in the list, and the list of the answers should contain all the words that previously met the requirements.')
+            if not nolack_flag:
+                lack_content = (
+                    f"{lack_text_list}It's a missing textlist, and you need to identify the image or text again to help me choose{lack_text_list}value。"
+                    f"Again, it is necessary to look at the user's input image or text again to make a judgment, and it is not possible to directly assume the parameter value, and the assumption of the parameter value is not allowed.")
+            if not true_flag:
+                connect_tag = '__'
+                no_in_text_item_list = [connect_tag.join(item.split(connect_tag)[:-1]) for item in no_in_text_list]
+                no_in_text_content = (
+                    f"{no_in_text_list}It is not available in the text space, and it cannot be selected, so please remove these words from the list. "
+                    f"And put{no_in_text_item_list}value to the re-selection。")
+
+            final_content = temp_list_content + lack_content + no_in_text_content + 'All words that are finally selected must be returned'
+            messages.append({"role": "user", "content": final_content})
+            response = self.client.chat.completions.create(
+                model=model,
+                messages=messages,
+                max_tokens=2000
+            )
+            messages.append({"role": "assistant", "content": response.choices[0].message.content})
+            end_list = self.getend_list(response)
+            if len(no_in_text_list) > 0:
+                end_list = list(set(end_list) - set(no_in_text_list))
+
+        return end_list
+
     def text_forusermodel_gpt(self, caption=None, user_input='I want the pants to be longer', model=None):
 
         '''Enter the image into LLm to get the content of the list and reply selected by the large model.
@@ -2179,6 +2244,59 @@ class MMUA():
         gpt_respond = gpt_respond + str(end_list)
         end_time = time.time()
         print(f'end_time:{end_time-start_time}')
+        return end_list, gpt_respond
+
+    def pictures_gpt(self, image_paths, model=None):
+        """Analyze multiple garment images and return a unified design caption list.
+
+        Args:
+            image_paths: List of local image file paths.
+            model: Optional model override.
+
+        Returns:
+            (end_list, gpt_respond) — same format as picture_gpt().
+        """
+        start_time = time.time()
+        if model is None:
+            model = self.model
+
+        logger.info("pictures_gpt entry: %d images, model=%s", len(image_paths), model)
+
+        # Build content array: text prompt + all images
+        content = [{"type": "text", "text": "Perform task one"}]
+        for i, img_path in enumerate(image_paths):
+            encode_start = time.time()
+            b64 = self.encode_image(img_path)
+            logger.debug("Encoded image %d in %.2fs", i, time.time() - encode_start)
+            content.append({
+                "type": "image_url",
+                "image_url": {"url": f"data:image/jpeg;base64,{b64}"}
+            })
+
+        messages = copy.deepcopy(self.messages)
+        messages.append({"role": "user", "content": content})
+
+        # API call
+        api_start = time.time()
+        response = self.client.chat.completions.create(
+            model=model,
+            messages=messages,
+            max_tokens=2000
+        )
+        logger.info("API response in %.1fs", time.time() - api_start)
+        messages.append({"role": "assistant", "content": response.choices[0].message.content})
+        print(response.choices[0].message.content)
+
+        gpt_respond = response.choices[0].message.content
+        end_list = self.getend_list(response)
+
+        # Validation
+        end_list = self._validate_and_refine_list(end_list, messages, model)
+
+        gpt_respond = gpt_respond + str(end_list)
+        logger.info(
+            "pictures_gpt complete in %.1fs, end_list length=%d",
+            time.time() - start_time, len(end_list))
         return end_list, gpt_respond
 
     def text_gpt(self, user_input="I want to go to the beach.", model=None):

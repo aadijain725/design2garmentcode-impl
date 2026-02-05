@@ -889,11 +889,14 @@ class GUIState:
 
         self.toggle_param_update_events(self.ui_design_refs)
 
-    async def parse_design(self, text_prompt='', img_url='',api_key=None, base_url=None, model=None,text_model=None):
+    async def parse_design(self, text_prompt='', img_url='', api_key=None, base_url=None, model=None, text_model=None):
         """Parse design from text or image"""
 
         def _sync_parse_design():
-            response = self.pattern_state.parse_chat(text_prompt, img_url,api_key, base_url, model,text_model)
+            img_urls = [img_url] if img_url else []
+            response = self.pattern_state.parse_chat(
+                text_prompt, img_url, api_key, base_url, model, text_model,
+                img_urls=img_urls)
             return response
 
         self.spin_dialog.open()
