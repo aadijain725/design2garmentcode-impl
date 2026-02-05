@@ -1,0 +1,71 @@
+name: Build and Publish Docker Image
+
+on:
+  push:
+    branches: [runpod-end2end-pipeline, main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:  # Manual trigger
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Container Registry
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=ref,event=branch
+            type=sha,prefix=
+            type=raw,value=latest,enable={{is_default_branch}}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          build-args: |
+            SKIP_MODELS=1
+          # Note: Models are downloaded at runtime to keep image smaller
+          # and avoid storing large files in the registry
+
+      - name: Generate deployment info
+        if: github.event_name != 'pull_request'
+        run: |
+          echo "## 🐳 Docker Image Published" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Image:** \`${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### RunPod Template Settings" >> $GITHUB_STEP_SUMMARY
+          echo "- **Container Image:** \`ghcr.io/aadijain725/design2garmentcode-impl:runpod-end2end-pipeline\`" >> $GITHUB_STEP_SUMMARY
+          echo "- **Exposed Ports:** HTTP 8080" >> $GITHUB_STEP_SUMMARY
+          echo "- **Environment Variables:** \`OPENAI_API_KEY\` (required)" >> $GITHUB_STEP_SUMMARY
+          echo "- **Volume Mount:** \`/app/lmm_utils/Qwen\` for model persistence" >> $GITHUB_STEP_SUMMARY
