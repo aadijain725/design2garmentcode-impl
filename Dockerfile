@@ -69,6 +69,7 @@ COPY . /app
 ENV CUDA_PATH=/usr/local/cuda
 RUN git clone https://github.com/maria-korosteleva/NvidiaWarp-GarmentCode.git /tmp/warp && \
     cd /tmp/warp && \
+    chmod -R +x tools/ && \
     python build_lib.py && \
     pip install -e . && \
     rm -rf /tmp/warp/.git
