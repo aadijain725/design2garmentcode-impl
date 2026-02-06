@@ -28,6 +28,7 @@ echo "Checking models..."
 
 if [ ! -f "/app/lmm_utils/Qwen/Qwen2-VL-2B-Instruct/config.json" ]; then
     echo "Downloading Qwen2-VL-2B-Instruct model..."
+    mkdir -p /app/lmm_utils/Qwen/Qwen2-VL-2B-Instruct
     python -c "
 from huggingface_hub import snapshot_download
 snapshot_download(
@@ -42,9 +43,16 @@ fi
 
 if [ ! -f "/app/lmm_utils/Qwen/qwen2vl_lora_mlp/model.pth" ]; then
     echo "Downloading fine-tuned weights..."
-    pip install -q gdown
-    gdown --id 1CL7OLUq6fYcwoDuLRkBxtKNxJ0_G73U- -O /app/lmm_utils/Qwen/qwen2vl_lora_mlp/model.pth
-    echo "Fine-tuned weights downloaded!"
+    mkdir -p /app/lmm_utils/Qwen/qwen2vl_lora_mlp
+    
+    # Try gdown first, fall back to curl if it fails
+    if pip install -q gdown && gdown --id 1CL7OLUq6fYcwoDuLRkBxtKNxJ0_G73U- -O /app/lmm_utils/Qwen/qwen2vl_lora_mlp/model.pth 2>/dev/null; then
+        echo "Fine-tuned weights downloaded via gdown!"
+    else
+        echo "gdown failed, trying curl..."
+        curl -L "https://drive.google.com/uc?export=download&id=1CL7OLUq6fYcwoDuLRkBxtKNxJ0_G73U-&confirm=t" -o /app/lmm_utils/Qwen/qwen2vl_lora_mlp/model.pth
+        echo "Fine-tuned weights downloaded via curl!"
+    fi
 else
     echo "✓ Fine-tuned weights found"
 fi
