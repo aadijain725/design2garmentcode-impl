@@ -83,7 +83,7 @@ chmod +x setup_runpod.sh
 
 ### What `setup_runpod.sh` Does
 
-The script automates six steps:
+The script automates six steps:  
 
 | Step | Action | Details |
 |------|--------|---------|
