@@ -296,6 +296,44 @@ python run_pipeline.py \
   --output ./combined_results
 ```
 
+### Sample Run: CLO 3D Dress with Size M Measurements
+
+This example demonstrates the full pipeline using a CLO 3D rendering of a sleeveless A-line midi dress combined with extracted garment measurements (Size M / EU 38).
+
+**Input files** (in `assets/dress_clo_input/`):
+- `Dress_Clo.jpg` — CLO 3D rendering (front, side, back views)
+- `Dress_M.png` — Measurement/dimension table with sizes 32–46
+- `measurements_size_m.json` — Extracted Size M measurements (OCR from the table)
+
+**Run the pipeline:**
+```bash
+conda activate d2g
+
+python run_pipeline.py \
+  --images assets/dress_clo_input/Dress_Clo.jpg \
+  --text "Sleeveless A-line midi dress with round neckline, fitted bodice, flared skirt. Size M measurements: Chest 90.50cm, Waist 76.00cm, Back length to waist 39.50cm, Shoulder to shoulder 39.50cm, Scye depth 23.00cm, Back length 84.00cm, Neck width 18.00cm, Neck drop back 3.00cm, Neck drop front 9.00cm, Zipper length 56.00cm, Bottom hem 647.00cm" \
+  --output ./pipeline_output/dress_clo_test \
+  --verbose
+```
+
+**Expected output** (in `pipeline_output/dress_clo_test/`):
+
+| File | Contents |
+|------|----------|
+| `pipeline_result.json` | GPT-4o visual analysis, design token list, elapsed time |
+| `caption.json` | Qwen2-VL parameter prediction (125 design tokens) |
+| `design_params.yaml` | Final parametric garment spec with numeric values |
+
+**Key parameters produced:**
+- `sleeve.sleeveless: true` — Sleeveless design
+- `collar.f_collar: CircleNeckHalf` — Round neckline
+- `meta.bottom: Skirt2` — A-line skirt type
+- `meta.connected: true` — One-piece dress
+- `skirt.length: 0.604` — Midi length
+- `skirt.flare: 2` — A-line flare
+
+The pipeline completed in ~105 seconds (GPT-4o image analysis + Qwen2-VL parameter projection).
+
 ---
 
 ## Batch Inference

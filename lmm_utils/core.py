@@ -1975,9 +1975,6 @@ class MMUA():
             response: the reply of the large language model after the end_list has been removed.
         '''
         if model is None: model = self.text_model
-        # model='deepseek-ai/DeepSeek-V3'
-        # model = "deepseek-ai/DeepSeek-R1"
-        model="qwen2.5-coder-32b-instruct"
         messages = copy.deepcopy(self.messages)
         # base64_image2 = encode_image(image_path2)
         messages.append({"role": "user", "content": f'Execute task five, which is the textlist selected at this time{caption}，{user_input}'})

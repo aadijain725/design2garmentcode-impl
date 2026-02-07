@@ -1,0 +1,63 @@
+{
+  "source": "Dress_M.png",
+  "size": "M (EU 38)",
+  "units": "cm",
+  "grading_display": "absolute",
+  "measurements": [
+    {
+      "pom_code": "E1",
+      "description": "Chest",
+      "value": 90.50
+    },
+    {
+      "pom_code": "F1",
+      "description": "Back length to waist",
+      "value": 39.50
+    },
+    {
+      "pom_code": "F1",
+      "description": "Waist",
+      "value": 76.00
+    },
+    {
+      "pom_code": "L1",
+      "description": "Bottom",
+      "value": 647.00
+    },
+    {
+      "pom_code": "C19",
+      "description": "Shoulder to shoulder",
+      "value": 39.50
+    },
+    {
+      "pom_code": "C23",
+      "description": "Scye depth",
+      "value": 23.00
+    },
+    {
+      "pom_code": "K3",
+      "description": "Back length",
+      "value": 84.00
+    },
+    {
+      "pom_code": "B1",
+      "description": "Neck width",
+      "value": 18.00
+    },
+    {
+      "pom_code": "B2",
+      "description": "Neck drop back",
+      "value": 3.00
+    },
+    {
+      "pom_code": "B3",
+      "description": "Neck drop front",
+      "value": 9.00
+    },
+    {
+      "pom_code": "N16",
+      "description": "Zipper length",
+      "value": 56.00
+    }
+  ]
+}
