@@ -5,16 +5,59 @@ on:
     branches: [runpod-end2end-pipeline, main]
   pull_request:
     branches: [main]
-  workflow_dispatch:  # Manual trigger
+  workflow_dispatch:
+    inputs:
+      action:
+        description: 'Action to perform'
+        required: true
+        default: 'build'
+        type: choice
+        options:
+          - build
+          - copy-from-ghcr
 
 env:
   IMAGE_NAME: design2garmentcode-impl
 
 jobs:
+  # Job 1: Copy existing image from ghcr.io to Docker Hub (fast, no rebuild)
+  copy-image:
+    if: github.event.inputs.action == 'copy-from-ghcr'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install skopeo
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y skopeo
+
+      - name: Copy image from ghcr.io to Docker Hub
+        run: |
+          skopeo copy \
+            --dest-creds "${{ secrets.DOCKERHUB_USERNAME }}:${{ secrets.DOCKERHUB_TOKEN }}" \
+            docker://ghcr.io/aadijain725/design2garmentcode-impl:runpod-end2end-pipeline \
+            docker://docker.io/${{ secrets.DOCKERHUB_USERNAME }}/design2garmentcode-impl:runpod-end2end-pipeline
+          
+          echo "✅ Image copied to Docker Hub!"
+          echo "Image: ${{ secrets.DOCKERHUB_USERNAME }}/design2garmentcode-impl:runpod-end2end-pipeline"
+
+      - name: Summary
+        run: |
+          echo "## ✅ Image Copied to Docker Hub" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Source:** \`ghcr.io/aadijain725/design2garmentcode-impl:runpod-end2end-pipeline\`" >> $GITHUB_STEP_SUMMARY
+          echo "**Destination:** \`${{ secrets.DOCKERHUB_USERNAME }}/design2garmentcode-impl:runpod-end2end-pipeline\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### RunPod Template Settings" >> $GITHUB_STEP_SUMMARY
+          echo "- **Container Image:** \`${{ secrets.DOCKERHUB_USERNAME }}/design2garmentcode-impl:runpod-end2end-pipeline\`" >> $GITHUB_STEP_SUMMARY
+          echo "- **Exposed Ports:** HTTP 8080" >> $GITHUB_STEP_SUMMARY
+
+  # Job 2: Build and push new image (slower, full rebuild)
   build-and-push:
+    if: github.event.inputs.action != 'copy-from-ghcr'
     runs-on: ubuntu-latest
     permissions:
       contents: read
+      packages: write
 
     steps:
       - name: Checkout repository
@@ -30,11 +73,21 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
+      - name: Log in to ghcr.io
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Extract metadata
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.IMAGE_NAME }}
+          images: |
+            ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.IMAGE_NAME }}
+            ghcr.io/${{ github.repository }}
           tags: |
             type=ref,event=branch
             type=sha,prefix=
@@ -47,19 +100,15 @@ jobs:
           push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          no-cache: true
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
           build-args: |
             SKIP_MODELS=1
 
       - name: Generate deployment info
         if: github.event_name != 'pull_request'
         run: |
-          echo "## 🐳 Docker Image Published to Docker Hub" >> $GITHUB_STEP_SUMMARY
+          echo "## 🐳 Docker Image Published" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "**Image:** \`${{ secrets.DOCKERHUB_USERNAME }}/${{ env.IMAGE_NAME }}\`" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "### RunPod Template Settings" >> $GITHUB_STEP_SUMMARY
-          echo "- **Container Image:** \`${{ secrets.DOCKERHUB_USERNAME }}/${{ env.IMAGE_NAME }}:runpod-end2end-pipeline\`" >> $GITHUB_STEP_SUMMARY
-          echo "- **Exposed Ports:** HTTP 8080" >> $GITHUB_STEP_SUMMARY
-          echo "- **Environment Variables:** \`OPENAI_API_KEY\` (required)" >> $GITHUB_STEP_SUMMARY
-          echo "- **Volume Mount:** \`/app/lmm_utils/Qwen\` for model persistence" >> $GITHUB_STEP_SUMMARY
+          echo "**Docker Hub:** \`${{ secrets.DOCKERHUB_USERNAME }}/${{ env.IMAGE_NAME }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "**ghcr.io:** \`ghcr.io/${{ github.repository }}\`" >> $GITHUB_STEP_SUMMARY
