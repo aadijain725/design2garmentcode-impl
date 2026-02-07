@@ -66,7 +66,10 @@ RUN wget -q https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.s
     rm /tmp/miniconda.sh
 ENV PATH=$CONDA_DIR/bin:$PATH
 
-RUN conda config --set auto_activate_base false
+RUN conda config --set auto_activate_base false && \
+    conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/main 2>/dev/null || true && \
+    conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/r 2>/dev/null || true && \
+    conda tos accept --override-channels --channel conda-forge 2>/dev/null || true
 
 WORKDIR /app
 
