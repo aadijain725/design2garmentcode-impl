@@ -42,16 +42,17 @@ else
 fi
 
 if [ ! -f "/app/lmm_utils/Qwen/qwen2vl_lora_mlp/model.pth" ]; then
-    echo "Downloading fine-tuned weights..."
+    echo "Downloading fine-tuned weights from HuggingFace..."
     mkdir -p /app/lmm_utils/Qwen/qwen2vl_lora_mlp
     
-    # Try gdown first, fall back to curl if it fails
-    if pip install -q gdown && gdown --id 1CL7OLUq6fYcwoDuLRkBxtKNxJ0_G73U- -O /app/lmm_utils/Qwen/qwen2vl_lora_mlp/model.pth 2>/dev/null; then
-        echo "Fine-tuned weights downloaded via gdown!"
+    # Download from HuggingFace (reliable, no rate limits)
+    curl -L "https://huggingface.co/Aadijain725/design2garmentcode-lora/resolve/main/model.pth" \
+        -o /app/lmm_utils/Qwen/qwen2vl_lora_mlp/model.pth
+    
+    if [ -f "/app/lmm_utils/Qwen/qwen2vl_lora_mlp/model.pth" ]; then
+        echo "✓ Fine-tuned weights downloaded!"
     else
-        echo "gdown failed, trying curl..."
-        curl -L "https://drive.google.com/uc?export=download&id=1CL7OLUq6fYcwoDuLRkBxtKNxJ0_G73U-&confirm=t" -o /app/lmm_utils/Qwen/qwen2vl_lora_mlp/model.pth
-        echo "Fine-tuned weights downloaded via curl!"
+        echo "WARNING: Failed to download fine-tuned weights. App may not work correctly."
     fi
 else
     echo "✓ Fine-tuned weights found"
