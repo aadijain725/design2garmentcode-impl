@@ -52,15 +52,19 @@ RUN conda config --set auto_activate_base false && \
 # Set working directory
 WORKDIR /app
 
-# Copy environment file first for caching
+# Copy environment and requirements files first for caching
 COPY environment_runpod.yml /app/environment_runpod.yml
+COPY requirements_runpod.txt /app/requirements_runpod.txt
 
-# Create conda environment
+# Create conda environment (base packages only - no pip section)
 RUN conda env create -f environment_runpod.yml && \
     conda clean -afy
 
 # Make RUN commands use the conda environment
 SHELL ["conda", "run", "-n", "d2g", "/bin/bash", "-c"]
+
+# Install PyTorch and ML dependencies separately (more reliable than conda pip:)
+RUN pip install --no-cache-dir -r requirements_runpod.txt
 
 # Copy the rest of the application
 COPY . /app
@@ -86,9 +90,9 @@ ARG SKIP_MODELS=0
 RUN if [ "$SKIP_MODELS" = "0" ]; then \
     echo "Downloading Qwen2-VL-2B-Instruct model..." && \
     python -c "from huggingface_hub import snapshot_download; snapshot_download(repo_id='Qwen/Qwen2-VL-2B-Instruct', local_dir='lmm_utils/Qwen/Qwen2-VL-2B-Instruct')" && \
-    echo "Downloading fine-tuned weights..." && \
-    pip install -q gdown && \
-    gdown --id 1CL7OLUq6fYcwoDuLRkBxtKNxJ0_G73U- -O lmm_utils/Qwen/qwen2vl_lora_mlp/model.pth && \
+    echo "Downloading fine-tuned weights from HuggingFace..." && \
+    curl -L "https://huggingface.co/Aadijain725/design2garmentcode-lora/resolve/main/model.pth" \
+        -o lmm_utils/Qwen/qwen2vl_lora_mlp/model.pth && \
     echo "Models downloaded successfully!"; \
     else echo "Skipping model download (SKIP_MODELS=1)"; fi
 
