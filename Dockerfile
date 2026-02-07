@@ -86,9 +86,11 @@ SHELL ["conda", "run", "-n", "d2g", "/bin/bash", "-c"]
 # Install Python dependencies
 RUN pip install --no-cache-dir -r requirements_runpod.txt && rm -rf ~/.cache/pip/*
 
-# Copy NvidiaWarp from builder
+# Copy NvidiaWarp from builder (including compiled binaries in warp/bin/)
 COPY --from=builder /build/warp /app/warp
-RUN cd /app/warp && pip install -e . --no-deps
+ENV PYTHONPATH="/app/warp:${PYTHONPATH}"
+# Verify warp loads correctly
+RUN python -c "import warp as wp; wp.init(); print('Warp initialized successfully')"
 
 # Copy application
 COPY . /app
