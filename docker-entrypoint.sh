@@ -22,6 +22,16 @@ else
     echo "WARNING: nvidia-smi not found"
 fi
 
+# Restore repo files that may be hidden by volume mounts
+echo ""
+echo "Restoring repo files..."
+if [ -d "/app/.repo_backup" ]; then
+    # Restore the qwen2vl Python file (hidden by volume mount)
+    mkdir -p /app/lmm_utils/Qwen/qwen2vl_lora_mlp
+    cp -n /app/.repo_backup/qwen2vl_modify_modeling_qwen2_vl.py /app/lmm_utils/Qwen/qwen2vl_lora_mlp/ 2>/dev/null || true
+    echo "✓ Repo files restored"
+fi
+
 # Verify models exist, download if missing
 echo ""
 echo "Checking models..."
@@ -89,8 +99,11 @@ mkdir -p /app/Logs /app/outputs /app/tmp_gui
 
 echo ""
 echo "============================================"
-echo "  Starting Application"
+echo "  Container Ready"
 echo "============================================"
+echo ""
+echo "To start the GUI manually:"
+echo "  python gui.py --host 0.0.0.0 --port 8080"
 echo ""
 
 # Execute the command passed to docker run

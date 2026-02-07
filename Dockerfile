@@ -95,6 +95,10 @@ RUN python -c "import warp as wp; wp.init(); print('Warp initialized successfull
 # Copy application
 COPY . /app
 
+# Backup files that might be hidden by volume mounts
+RUN mkdir -p /app/.repo_backup && \
+    cp /app/lmm_utils/Qwen/qwen2vl_lora_mlp/qwen2vl_modify_modeling_qwen2_vl.py /app/.repo_backup/ 2>/dev/null || true
+
 # Create directories
 RUN mkdir -p /app/lmm_utils/Qwen/Qwen2-VL-2B-Instruct \
     /app/lmm_utils/Qwen/qwen2vl_lora_mlp \
@@ -113,4 +117,5 @@ ENV HF_HOME=/app/.cache/huggingface
 ENV PYOPENGL_PLATFORM=osmesa
 
 ENTRYPOINT ["/app/docker-entrypoint.sh"]
-CMD ["python", "gui.py", "--host", "0.0.0.0", "--port", "8080"]
+# Default: keep container alive for SSH access. Run GUI manually when needed.
+CMD ["sleep", "infinity"]
