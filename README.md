@@ -208,6 +208,57 @@ Press **Ctrl+C** to gracefully stop all services.
 
 ---
 
+## Running from Command Line
+
+For batch processing or scripting, use `run_image_pipeline.py`:
+
+### Basic Usage
+
+```bash
+conda activate d2g
+
+# Process an image → pattern + 3D simulation
+python run_image_pipeline.py assets/dress_clo_input/Dress_Clo.jpg
+
+# Pattern only (skip 3D simulation, faster)
+python run_image_pipeline.py my_design.png --no-sim
+
+# Verbose output
+python run_image_pipeline.py sketch.jpg -v
+```
+
+### What It Does
+
+| Stage | Model | Output | Time |
+|-------|-------|--------|------|
+| 1. MMUA | GPT-4o | Design caption list | ~6s |
+| 2. DSL-GA | Qwen2-VL (fine-tuned) | 130 YAML parameters | ~25s |
+| 3. GarmentCode | Parametric engine | SVG/PNG/PDF patterns | <1s |
+| 4. Warp Sim | GPU physics | GLB mesh + renders | ~50s |
+
+### Output Files
+
+```
+tmp_gui/downloads/<session_id>/
+├── Configured_design/
+│   ├── *_pattern.png        # Sewing pattern image
+│   ├── *_pattern.svg        # Vector pattern
+│   ├── *_print_pattern.pdf  # Printable pattern
+│   ├── *_specification.json # Exact measurements
+│   └── design_params.yaml   # All 130 parameters
+└── Configured_design_3D/
+    ├── *_sim.glb            # 3D mesh (viewable in any GLB viewer)
+    ├── *_sim.obj            # OBJ format
+    ├── *_render_front.png   # Front preview
+    └── *_render_back.png    # Back preview
+```
+
+### Important Note
+
+The script must initialize `warp` before importing from `/app` due to a module path conflict. This is handled automatically in `run_image_pipeline.py`.
+
+---
+
 ## Unified Pipeline CLI (`run_pipeline.py`)
 
 `run_pipeline.py` is a headless CLI for running the full design-to-pattern pipeline without the GUI. It accepts **text**, **images**, or **both** and produces structured output files.
